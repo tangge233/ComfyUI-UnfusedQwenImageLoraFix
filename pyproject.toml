@@ -1,0 +1,14 @@
+[project]
+name = "unfused-qwen-image-lora-fix"
+version = "0.1.0"
+description = "Qwen-Image 2.1 LoRA loader that losslessly maps fused gate_up weights onto unfused/GGUF models."
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/tangge233/ComfyUI-UnfusedQwenImageLoraFix"
+
+[tool.comfy]
+PublisherId = "tangge233"
+DisplayName = "Qwen-Image 2.1 Unfused LoRA Fix"

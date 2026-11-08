@@ -62,7 +62,10 @@ class Qwen21LoraAutoFix:
 
         remapped, report = remap_lora(lora, unet_map, clip_map)
         if strict and report["unmatched"]:
-            raise RuntimeError(f"Unable to mapping {len(report["unmatched"])} modules in LoRA:\n{"\n".join(report["unmatched"][:10])}")
+            unmatched = "\n".join(report["unmatched"][:10])
+            raise RuntimeError(
+                f"Unable to mapping {len(report['unmatched'])} modules in LoRA:\n{unmatched}"
+            )
 
         loaded = comfy.lora.load_lora(remapped, key_map)
 
