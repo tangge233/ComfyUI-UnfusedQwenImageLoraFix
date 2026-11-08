@@ -49,10 +49,10 @@ def normalize(base):
 def model_layout(unet_key_map):
     """Describe the model MLP layout using the keys it already exposes."""
     if any(".img_mlp.gate_up" in key for key in unet_key_map):
-        return "gate_up (融合)"
+        return "gate_up (fused)"
     if any(".img_mlp.gate_layer" in key for key in unet_key_map):
-        return "gate_layer + proj (拆分)"
-    return "Not Qwen-Image 2.1 or unknown model struct"
+        return "gate_layer + proj (unfused)"
+    return "Not Qwen-Image 2.1 or unknown model structure"
 
 
 def classify(base, unet_map, clip_map):

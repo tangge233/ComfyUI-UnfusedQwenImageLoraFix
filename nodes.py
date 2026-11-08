@@ -49,7 +49,7 @@ class Qwen21LoraAutoFix:
     FUNCTION = "apply"
     CATEGORY = "Qwen-Image 2.1"
     DESCRIPTION = ("Qwen-Image 2.1 LoRA Loader: split fused gate_up to gate_layer/proj, "
-                   "Good for GGUF model; Supporting MODEL and CLIP jsut like the normal LoRA Loader")
+                   "good for GGUF models; supports MODEL and CLIP just like the normal LoRA Loader")
 
     def apply(self, lora_name, strength_model, strength_clip, model=None, clip=None, strict=False):
         if model is None and clip is None:
@@ -64,7 +64,7 @@ class Qwen21LoraAutoFix:
         if strict and report["unmatched"]:
             unmatched = "\n".join(report["unmatched"][:10])
             raise RuntimeError(
-                f"Unable to mapping {len(report['unmatched'])} modules in LoRA:\n{unmatched}"
+                f"Unable to map {len(report['unmatched'])} modules in the LoRA:\n{unmatched}"
             )
 
         loaded = comfy.lora.load_lora(remapped, key_map)
@@ -84,7 +84,7 @@ class Qwen21LoraAutoFix:
                             clip is not None, model_patches, clip_patches, len(loaded))
 
         if loaded and (model_patches or 0) + (clip_patches or 0) == 0:
-            logging.warning("[Qwen21LoraAutoFix] No patch applied, please checking the LoRA file.")
+            logging.warning("[Qwen21LoraAutoFix] No patches applied; please check the LoRA file.")
 
         return (new_model, new_clip, text)
 
@@ -109,11 +109,11 @@ class Qwen21LoraAudit:
     FUNCTION = "audit"
     CATEGORY = "Qwen-Image 2.1"
     OUTPUT_NODE = True
-    DESCRIPTION = "Check whether the LoRA can fully mapping to current MODEL/CLIP(may in GGUF) or not."
+    DESCRIPTION = "Check whether the LoRA fully maps to the current MODEL/CLIP (which may be GGUF)."
 
     def audit(self, lora_name, model=None, clip=None):
         if model is None and clip is None:
-            raise RuntimeError("Qwen21LoraAutoFix: no model or clip provided")
+            raise RuntimeError("Qwen21LoraAudit: no model or clip provided")
 
         path = folder_paths.get_full_path("loras", lora_name)
         lora = load_lora_file(path)

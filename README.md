@@ -1,5 +1,7 @@
 # ComfyUI-UnfusedQwenImageLoraFix
 
+[English](README.en_us.md) | 中文
+
 给 Qwen-Image 2.1 用的 LoRA 加载节点。功能上和 ComfyUI 自带的 `LoraLoader` 一样，
 MODEL 和 CLIP 两条路都能接。区别是它会顺手修一个键名对不上的问题：不修的话，
 一部分 LoRA 权重会被悄悄丢掉，而且不会报错。
@@ -104,29 +106,29 @@ ln -s "$(pwd)/ComfyUI-UnfusedQwenImageLoraFix" ~/ComfyUI/custom_nodes/ComfyUI-Un
 
 ```
 [Qwen21LoraAutoFix] zzz_chibi_v2_st2500.safetensors
-  模型 MLP 布局 : gate_layer + proj (拆分)
-  LoRA 模块     : 192
-    扩散模型侧  : 192
-    文本编码器侧: 0
-  无损拆分      : 32 个 gate_up -> gate_layer + proj
-                  例: diffusion_model.transformer_blocks.0.img_mlp.gate_up
-  model patch   : 192
-  clip patch    : 0
-  patch 条目    : 224
+  Model MLP layout : gate_layer + proj (unfused)
+  LoRA modules     : 192
+    Diffusion side : 192
+    Text encoder   : 0
+  Lossless splits  : 32 gate_up -> gate_layer + proj
+                    e.g. diffusion_model.transformer_blocks.0.img_mlp.gate_up
+  Model patches    : 192
+  Clip patches     : 0
+  Patch entries    : 224
 ```
 
 各字段的意思：
 
 | 字段 | 含义 |
 |---|---|
-| 模型 MLP 布局 | `gate_up` 表示模型是合着存的；`gate_layer + proj` 表示拆开存的 |
-| 扩散模型侧 / 文本编码器侧 | 这个 LoRA 里分别有多少模块属于两边 |
-| 无损拆分 | 这次实际拆开了多少个 `gate_up`；是 0 就说明不需要拆 |
-| 未映射 | 确实对不上的模块，会逐条列出来 |
-| model / clip patch | 分别有多少个 patch 落到了模型上 |
-| patch 条目 | 去重之后的 patch 总数 |
+| `Model MLP layout` | `gate_up (fused)` 表示模型是合着存的；`gate_layer + proj (unfused)` 表示拆开存的 |
+| `Diffusion side` / `Text encoder` | 这个 LoRA 里分别有多少模块属于两边 |
+| `Lossless splits` | 这次实际拆开了多少个 `gate_up`；是 0 就说明不需要拆 |
+| `Unmatched` | 确实对不上的模块，会逐条列出来 |
+| `Model patches` / `Clip patches` | 分别有多少个 patch 落到了模型上 |
+| `Patch entries` | 去重之后的 patch 总数 |
 
-正常情况下 **未映射应该是 0**。如果 `model patch` 比「扩散模型侧」少很多，说明模型里
+正常情况下 **`Unmatched` 应该是 0**。如果 `Model patches` 比「`Diffusion side`」少很多，说明模型里
 没有对应的权重，先检查是不是拿错了模型版本——Qwen-Image 1.0 是 60 层，2.1 是 32 层，
 两者的键名并不通用。
 
@@ -184,7 +186,7 @@ CLIPLoader ────────── clip ──┘        └──── 
 也可以，那是 `lora_repack.py split` 的做法：离线改文件，任何前端都能用。这个节点
 的好处是不动原文件，换 LoRA、换强度都方便，也不会多出一份占空间的副本。
 
-### 接了 CLIP，但报告里「文本编码器侧」是 0？
+### 接了 CLIP，但报告里 `Text encoder` 是 0？
 
 说明这个 LoRA 只训练了扩散模型。Qwen-Image 的绝大多数 LoRA 都是这样。接 CLIP 不会
 影响结果，只是 `strength_clip` 没有实际作用。
@@ -198,7 +200,7 @@ CLIPLoader ────────── clip ──┘        └──── 
 ### 模型本来就是 fused 布局，还需要这个节点吗？
 
 不需要。ComfyUI 核心会自动处理 fused 模型加 unfused LoRA 的情况，再拆一次反而会错。
-可以先用 `Qwen21LoraAudit` 看一眼「模型 MLP 布局」，如果显示 `gate_up (融合)`，
+可以先用 `Qwen21LoraAudit` 看一眼 `Model MLP layout`，如果显示 `gate_up (fused)`，
 直接接原生 `LoraLoader` 就行。
 
 ### 会影响 GGUF 的量化精度吗？
