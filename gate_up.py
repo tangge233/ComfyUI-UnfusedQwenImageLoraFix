@@ -34,10 +34,10 @@ def _split_gate_up(base, kinds, lora):
     b_name = kinds.get("B")
     weight_b = lora.get(b_name) if b_name else None
     if weight_b is None:
-        return None, "缺少可用的 lora_B, 跳过"
+        return None, "Missing lora_B, skipped"
     rows = weight_b.shape[0]
     if rows % 2:
-        return None, "lora_B 行数不是偶数, 跳过"
+        return None, "The row of lora_B is not even, skipped"
 
     half = rows // 2
     targets = (
@@ -49,9 +49,7 @@ def _split_gate_up(base, kinds, lora):
         tensor = lora[name]
         suffix = name[len(base):]
         for new_base, part in targets:
-            if kind == "B":
-                out[new_base + suffix] = tensor[part]
-            elif kind == "D" and tensor.dim() == 1 and tensor.shape[0] == rows:
+            if kind == "B" or (kind == "D" and tensor.dim() == 1 and tensor.shape[0] == rows):
                 out[new_base + suffix] = tensor[part]
             else:
                 out[new_base + suffix] = tensor
@@ -91,7 +89,7 @@ def remap_lora(lora, unet_map, clip_map):
                 entries, error = _split_gate_up(base, kinds, lora)
                 if entries is None:
                     report["unmatched"].append(base)
-                    report["notes"].append("%s: %s" % (base, error))
+                    report["notes"].append(f"{base}: {error}")
                     continue
                 out.update(entries)
                 report["split"].append(base)

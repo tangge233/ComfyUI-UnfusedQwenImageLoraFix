@@ -40,7 +40,7 @@ class Qwen21LoraAutoFix:
                 "model": ("MODEL",),
                 "clip": ("CLIP",),
                 "strict": ("BOOLEAN", {"default": False,
-                                       "tooltip": "True: 有模块无法映射就报错, 而不是跳过"}),
+                                       "tooltip": "True: Throw the error if mapping is failed"}),
             },
         }
 
@@ -48,12 +48,12 @@ class Qwen21LoraAutoFix:
     RETURN_NAMES = ("model", "clip", "report")
     FUNCTION = "apply"
     CATEGORY = "Qwen-Image 2.1"
-    DESCRIPTION = ("Qwen-Image 2.1 LoRA 加载器: 自动把 fused gate_up 无损拆成 gate_layer/proj, "
-                   "适配拆分布局的 GGUF; 同时支持 MODEL 与 CLIP")
+    DESCRIPTION = ("Qwen-Image 2.1 LoRA Loader: split fused gate_up to gate_layer/proj, "
+                   "Good for GGUF model; Supporting MODEL and CLIP jsut like the normal LoRA Loader")
 
     def apply(self, lora_name, strength_model, strength_clip, model=None, clip=None, strict=False):
         if model is None and clip is None:
-            raise RuntimeError("Qwen21LoraAutoFix: model 和 clip 至少接一个")
+            raise RuntimeError("Qwen21LoraAutoFix: no model or clip provided")
 
         path = folder_paths.get_full_path("loras", lora_name)
         lora = load_lora_file(path)
@@ -62,12 +62,11 @@ class Qwen21LoraAutoFix:
 
         remapped, report = remap_lora(lora, unet_map, clip_map)
         if strict and report["unmatched"]:
-            raise RuntimeError("LoRA 有 %d 个模块无法映射:\n%s"
-                               % (len(report["unmatched"]), "\n".join(report["unmatched"][:10])))
+            raise RuntimeError(f"Unable to mapping {len(report["unmatched"])} modules in LoRA:\n{"\n".join(report["unmatched"][:10])}")
 
         loaded = comfy.lora.load_lora(remapped, key_map)
 
-        layout = model_layout(unet_map) if model is not None else "未接入 MODEL"
+        layout = model_layout(unet_map) if model is not None else "No MODEL provided"
         new_model, new_clip = model, clip
         model_patches = clip_patches = None
 
@@ -82,7 +81,7 @@ class Qwen21LoraAutoFix:
                             clip is not None, model_patches, clip_patches, len(loaded))
 
         if loaded and (model_patches or 0) + (clip_patches or 0) == 0:
-            logging.warning("[Qwen21LoraAutoFix] 没有任何 patch 命中, 检查 LoRA 与模型是否匹配")
+            logging.warning("[Qwen21LoraAutoFix] No patch applied, please checking the LoRA file.")
 
         return (new_model, new_clip, text)
 
@@ -107,17 +106,17 @@ class Qwen21LoraAudit:
     FUNCTION = "audit"
     CATEGORY = "Qwen-Image 2.1"
     OUTPUT_NODE = True
-    DESCRIPTION = "检查一个 LoRA 能否完整映射到当前 MODEL / CLIP (含 GGUF)"
+    DESCRIPTION = "Check whether the LoRA can fully mapping to current MODEL/CLIP(may in GGUF) or not."
 
     def audit(self, lora_name, model=None, clip=None):
         if model is None and clip is None:
-            raise RuntimeError("Qwen21LoraAudit: model 和 clip 至少接一个")
+            raise RuntimeError("Qwen21LoraAutoFix: no model or clip provided")
 
         path = folder_paths.get_full_path("loras", lora_name)
         lora = load_lora_file(path)
         unet_map, clip_map = build_key_maps(model, clip)
         _, report = remap_lora(lora, unet_map, clip_map)
-        layout = model_layout(unet_map) if model is not None else "未接入 MODEL"
+        layout = model_layout(unet_map) if model is not None else "No MODEL provided"
 
         text = build_report("Qwen21LoraAudit", path, report, layout, clip is not None, None, None, None)
         print(text)

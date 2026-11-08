@@ -52,7 +52,7 @@ def model_layout(unet_key_map):
         return "gate_up (融合)"
     if any(".img_mlp.gate_layer" in key for key in unet_key_map):
         return "gate_layer + proj (拆分)"
-    return "非 Qwen-Image 2.1 或未知"
+    return "Not Qwen-Image 2.1 or unknown model struct"
 
 
 def classify(base, unet_map, clip_map):
